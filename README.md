@@ -1,53 +1,75 @@
-# 🇧🇷 Open SaaS Brasil - 5 SaaS prontos com PIX pra você clonar e vender
+# Open SaaS Brasil
 
-[![Feito para 10M de devs BR](https://img.shields.io/badge/Feito%20para-10M%20de%20devs%20BR-16856b)](#)
+Modelos open source para adaptar a pequenos negócios brasileiros. O repositório é um ponto de partida técnico, não um conjunto de produtos prontos para venda.
 
-Modelos open source para adaptar a pequenos negócios brasileiros. O selo é um lema, não uma estatística. **Barbearia** é a implementação funcional inicial; os outros quatro projetos são bases TODO e ainda não são produtos prontos.
+> **Estado atual:** a barbearia é o único app implementado, ainda com limites importantes para uso real. Clínica, loja, academia e imobiliária são esboços/documentação; confira o estado de cada pasta antes de iniciar uma adaptação.
 
-| Projeto | Estado |
+## Apps e estado real
+
+| App | Estado nesta versão |
 |---|---|
-| [Barbearia](apps/saas-barbearia) | ✅ Login, clientes, agendamentos e geração de PIX estático implementados; exige configuração e validação operacional antes de produção. |
-| [Clínica](apps/saas-clinica) | 🚧 TODO |
-| [Loja](apps/saas-loja) | 🚧 TODO |
-| [Academia](apps/saas-academia) | 🚧 TODO |
-| [Imobiliária](apps/saas-imobiliaria) | 🚧 TODO |
+| [Barbearia](apps/saas-barbearia) | Next.js com cadastro/login, área de clientes, dashboard e geração de BR Code PIX estático. A UI CRUD de agendamentos, confirmação automática de pagamentos e envio de mensagens não estão implementados. Não está pronta para produção. |
+| [Clínica](apps/saas-clinica) | Documentação/TODO; não é um app funcional. |
+| [Loja](apps/saas-loja) | Documentação/TODO; não é um app funcional. |
+| [Academia](apps/saas-academia) | Documentação/TODO; não é um app funcional. |
+| [Imobiliária](apps/saas-imobiliaria) | TODO; não é um app funcional. |
 
-## Por que isso vai te fazer ganhar dinheiro
+## Barbearia: executar localmente
 
-Um ponto de partida aberto pode reduzir trabalho repetitivo e ajudar você a testar uma oferta para negócios locais. Não garante clientes, receita ou lucro: valide a demanda, custos, suporte e obrigações legais antes de vender. Leia [como vender](docs/como-vender.md).
+### Requisitos
 
-## Começar (barbearia)
+- Node.js **20.11 ou superior** e npm **10 ou superior**.
+- PostgreSQL 14+ disponível para desenvolvimento.
+- O app usa Google OAuth apenas se suas credenciais forem configuradas. PIX exige dados válidos do recebedor, mas a geração de código não confirma recebimento.
 
-Pré-requisitos: Node.js 20.11+, npm 10+ e PostgreSQL 14+ local/de desenvolvimento. Google OAuth e PIX só funcionam depois de configurar provedores e segredos.
+### Instalação
 
 ```bash
 git clone https://github.com/jeanvicen/open-saas-brasil.git
 cd open-saas-brasil
 cp .env.example .env
-# Edite .env com DATABASE_URL, NEXTAUTH_SECRET e dados PIX; não use valores de exemplo em produção
+```
+
+Edite `.env` com a URL do seu banco local, um `NEXTAUTH_SECRET` gerado por você e, caso vá testar a geração de BR Code, os dados do seu próprio recebedor PIX. Não publique `.env`, não reutilize os valores de exemplo e nunca use dados de recebedor alheios. Para OAuth local, configure também o callback `http://localhost:3000/api/auth/callback/google` no provedor Google.
+
+```bash
 npm install
 npx prisma db push --schema=packages/db/prisma/schema.prisma
 npm run dev:barbearia
 ```
 
-Acesse http://localhost:3000. `db push` é apropriado para desenvolvimento inicial; prefira migrations revisadas para ambientes compartilhados/produção. Senha não é derivada do CPF. O primeiro usuário cria conta com CPF e senha; mantenha senha forte. Google exige credenciais e URI de callback `http://localhost:3000/api/auth/callback/google` no Console Google.
+Abra http://localhost:3000. `db push` serve para desenvolvimento inicial; não substitui migrations revisadas em ambientes compartilhados ou produção. Neste repositório não há `package-lock.json`, portanto `npm install` não fixa a árvore exata de dependências e `npm ci` não é uma opção reproduzível neste estado. A geração/validação do lockfile é uma lacuna de setup conhecida.
 
-## Segurança e limites
+## Testes disponíveis
 
-O exemplo usa Next.js 15.5.28 (linha de manutenção corrigida), não Next 14: o alerta oficial de 14/10/2026 recomenda versões 15.5.28 ou 16.4.1 contra vulnerabilidades críticas. Reavalie advisories e atualize dependências antes de expor à internet. Sessões e rotas autenticadas validam usuário no servidor; consultas de negócio sempre filtram por `userId`. HTTPS, rate limiting, backups, gestão de segredos, política de retenção e revisão legal continuam sendo responsabilidade da implantação.
+```bash
+npm run test:packages
+npm run build:barbearia
+```
 
-PIX gerado é um BR Code estático para cobrança, não comprova recebimento nem atualiza pagamento. A interface de webhook não pode ser genérica: configure PSP/banco, autentique assinaturas, trate idempotência e reconciliação antes de confirmar pagamentos. WhatsApp depende de provedor oficial, consentimento e configuração; nada aqui envia mensagens. Consulte [documentação técnica](apps/saas-barbearia/README.md).
+Os testes de pacote cobrem validações brasileiras e geração de BR Code; o build não é teste de integração. Não há aqui prova de fluxo completo com PostgreSQL, Google OAuth, envio de PIX, webhook de PSP ou navegação E2E. Não declare essas integrações testadas sem executá-las com ambientes e credenciais próprios.
 
-## Estrutura
+## Segurança, dados e limites
+
+- Rotas de negócio autenticadas devem continuar restringindo consultas ao `userId` da sessão. Teste isolamento entre contas antes de disponibilizar o serviço.
+- Cadastro por CPF e senha não verifica identidade, não tem recuperação de senha/MFA nem proteção contra tentativas automatizadas nesta versão. Não abra cadastro publicamente sem controles adicionais e revisão de segurança.
+- O modelo guarda dados pessoais de clientes. Colete apenas o necessário, defina finalidade, base legal, retenção e atendimento a titulares com orientação adequada; evite dados sensíveis desnecessários.
+- BR Code estático não comprova pagamento. O app não recebe confirmação nem altera o status automaticamente. Não marque uma cobrança como paga por retorno do navegador ou comprovante enviado pelo usuário. Uma integração real exige PSP/banco, webhook autenticado, idempotência, proteção contra replay e reconciliação.
+- WhatsApp não está integrado; não há envio de mensagens. Uma futura integração deve usar provedor permitido e respeitar opt-in e regras aplicáveis.
+- Antes de produção, planeje migrations, TLS, backups e teste de restauração, rate limiting, gestão de segredos, monitoramento, política de privacidade/retenção e revisão jurídica e de segurança. Não use o banco de desenvolvimento como ambiente de produção.
+
+Leia o [guia técnico da barbearia](apps/saas-barbearia/README.md) e o [guia de validação comercial responsável](docs/como-vender.md). O projeto pode ajudar a experimentar uma solução, mas não promete clientes, renda ou lucro.
+
+## Estrutura do monorepo
 
 - `apps/saas-barbearia`: aplicação Next.js demonstrável.
-- `packages/ui`: componentes acessíveis com estilo shadcn/ui (primitives locais, sem geração falsa).
-- `packages/auth`: configuração NextAuth e login por Google/CPF + senha.
-- `packages/pix`: BR Code estático e contrato de adaptador PSP/webhook.
+- `apps/saas-clinica`, `apps/saas-loja`, `apps/saas-academia`, `apps/saas-imobiliaria`: pontos de partida incompletos, conforme descrito acima.
+- `packages/auth`: configuração NextAuth e autenticação.
 - `packages/db`: schema Prisma/PostgreSQL.
-- `packages/brasil`: validações CPF, CNPJ e CEP.
-- Outros apps: TODOs explícitos em cada pasta.
+- `packages/brasil`: validações de CPF, CNPJ e CEP.
+- `packages/pix`: geração de BR Code estático e contrato para futura integração.
+- `packages/ui`: primitivas de interface locais.
 
-## Verificações
+## Contribuir
 
-Testes locais: `npm run test:packages`; build: `npm run build:barbearia`. Eles não substituem teste E2E com PostgreSQL, Google OAuth, provedor PIX ou revisão de segurança.
+Contribuições devem deixar explícito o que é implementação funcional, o que depende de serviço/configuração externa e o que continua TODO. Prefira mudanças pequenas e testáveis, sem credenciais, dados pessoais reais ou alegações de integração que não foi executada.
