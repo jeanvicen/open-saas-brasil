@@ -1,0 +1,4 @@
+export function somenteDigitos(v:string){return v.replace(/\D/g,"")}
+export function validarCPF(valor:string){const cpf=somenteDigitos(valor);if(!/^\d{11}$/.test(cpf)||/^(\d)\1{10}$/.test(cpf))return false;const calc=(s:string,f:number)=>{let t=0;for(let i=0;i<s.length;i++)t+=Number(s[i])*(f-i);const r=(t*10)%11;return r===10?0:r};return calc(cpf.slice(0,9),10)===Number(cpf[9])&&calc(cpf.slice(0,10),11)===Number(cpf[10])}
+export function validarCNPJ(valor:string){const c=somenteDigitos(valor);if(!/^\d{14}$/.test(c)||/^(\d)\1{13}$/.test(c))return false;const dv=(s:string,w:number[])=>{const n=s.split("").reduce((a,d,i)=>a+Number(d)*w[i],0)%11;return n<2?0:11-n};return dv(c.slice(0,12),[5,4,3,2,9,8,7,6,5,4,3,2])===Number(c[12])&&dv(c.slice(0,13),[6,5,4,3,2,9,8,7,6,5,4,3,2])===Number(c[13])}
+export function validarCEP(cep:string){return /^\d{8}$/.test(somenteDigitos(cep))}
