@@ -1,0 +1,1 @@
+import {LoginForm} from "../../components/login-form";export default function Login(){return <section className="mx-auto max-w-md py-8"><h1 className="text-3xl font-bold">Acesse sua conta</h1><p className="mt-2 text-stone-600">Use Google ou seu CPF e senha. CPF sozinho não comprova identidade.</p><div className="mt-6"><LoginForm/></div></section>}
